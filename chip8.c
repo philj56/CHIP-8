@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "chip8.h"
 
@@ -27,6 +28,13 @@ void chip8_initialise(struct chip8 *chip)
 	// Reset timers
 	chip->delay_timer = 0;
 	chip->sound_timer = 0;	
+}
+
+void chip8_load_rom(struct chip8* chip, const char *filename)
+{
+	FILE *rom = fopen(filename, "r");
+	fread(&(chip->memory[CHIP8_PROGRAM_START]), 1, CHIP8_MEMORY_SIZE - CHIP8_PROGRAM_START, rom);
+	fclose(rom);
 }
 
 void chip8_clear_screen(struct chip8 *chip)
@@ -64,6 +72,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 				// 0x0NNN: Call RCA 1802 at NNN
 				default:
 					// TODO: Implement
+					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
 					break;
 			}
 			break;
@@ -176,43 +185,133 @@ void chip8_emulate_cycle(struct chip8 *chip)
 
 				// 0x8XYE: Set VX = (VY <<= 1)
 				case 0x000E:
-					chip->V[0xF] = (chip->V[y] & 0xF000) >> 3;
+					chip->V[0xF] = (chip->V[y] & (uint8_t)0xF000) >> 3;
 					chip->V[y] <<= 1;
 					chip->V[x] = chip->V[y];
 					break;
 
 				default:
-					fprintf(stderr, "Unknow opcode 0x%X\n", chip->opcode);			
+					fprintf(stderr, "Unknown opcode 0x%04X\n", chip->opcode);			
 					break;
 			}
 			break;
 			
-		// 0x9XNN: 
+		// 0x9XY0: Skip next instruction if VX != VY
 		case 0x9000:
+			if (chip->V[x] != chip->V[y]) {
+				chip->pc += 2;
+			}
 			break;
 			
 		// 0xANNN: Sets I to address NNN
 		case 0xA000:
+			chip->I = (chip->opcode & 0x0FFF);
 			break;
 			
 		// 0xBNNN: Jump to address V0 + NNN
 		case 0xB000:
+			chip->pc = chip->V[0] + (chip->opcode & 0x0FFF);
 			break;
 			
 		// 0xCXNN: Set VX = rand & NN
 		case 0xC000:
+			chip->V[x] = rand() & (chip->opcode & 0x00FF);
 			break;
 			
 		// 0xDXYN: Draw 8xN sprite at (VX, VY)
 		case 0xD000:
+			// TODO: Implement
+			fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
 			break;
 			
-		// 0xENNN: 
 		case 0xE000:
+			switch(chip->opcode & 0x00FF)
+			{
+				// 0xEX9E: Skip next instruction if key VX is pressed
+				case 0x009E:
+					// TODO: Implement
+					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
+					break;
+				
+				// 0xEXA1: Skip next instruction if key VX is not pressed
+				case 0x00A1:
+					// TODO: Implement
+					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
+					break;
+
+				default:
+					fprintf(stderr, "Unknown opcode 0x%04X\n", chip->opcode);			
+					break;
+			}
 			break;
 			
-		// 0xFNNN: 
 		case 0xF000:
+			switch(chip->opcode & 0x00FF)
+			{
+				// 0xFX07: Set VX to the delay timer
+				case 0x0007:
+					chip->V[x] = chip->delay_timer;
+					break;
+
+				// 0xFX0A: Wait for keypress, and store in VX
+				case 0x000A:
+					// TODO: Implement
+					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
+					break;
+
+				// 0xFX15: Set the delay timer to VX
+				case 0x0015:
+					chip->delay_timer = chip->V[x];
+					break;
+
+				// 0xFX18: Set the sound timer to VX
+				case 0x0018:
+					chip->sound_timer = chip->V[x];
+					break;
+
+				// 0xFX1E: Set I += VX
+				case 0x001E:
+					chip->I += chip->V[x];
+					// Check for overflow
+					if(chip->I < chip->V[x] || chip->I > 0xFFF) {
+						chip->V[0xF] = 1;
+					} else {
+						chip->V[0xF] = 0;
+					}
+					break;
+
+				// 0xFX29: Sets I to the location of sprite VX
+				case 0x0029:
+					// TODO: Implement
+					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
+					break;
+
+				// 0xFX33: Store BCD(VX) at I
+				case 0x0033:
+					// TODO: Implement
+					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
+					break;
+
+				// 0xFX55: Stores from V0 to VX in memory at I
+				case 0x0055:
+					for(uint8_t i = 0; i <= x; i++) {
+						chip->memory[chip->I] = chip->V[i];
+						++(chip->I);
+					}
+					break;
+
+				// 0xFX65: Loads V0 to VX from memory at I
+				case 0x0065:
+					for(uint8_t i = 0; i <= x; i++) {
+						chip->V[i] = chip->memory[chip->I];
+						++(chip->I);
+					}
+					break;
+
+				default:
+					fprintf(stderr, "Unknown opcode 0x%04X\n", chip->opcode);			
+					break;
+			}
 			break;
 
 		default:

@@ -31,6 +31,9 @@ struct chip8 {
 // Wipe all registers and memory
 void chip8_initialise(struct chip8* chip);
 
+// Load a rom into memory
+void chip8_load_rom(struct chip8* chip, const char *filename);
+
 // Clear the screen buffer
 void chip8_clear_screen(struct chip8 *chip);
 
