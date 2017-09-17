@@ -2,6 +2,32 @@
 #include <stdlib.h>
 #include <string.h>
 #include "chip8.h"
+#include "chip8_window.h"
+
+const uint8_t chip8_fontset[80] =
+{ 
+	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+	0x20, 0x60, 0x20, 0x20, 0x70, // 1
+	0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+	0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+	0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+	0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+	0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+	0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+	0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+	0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+	0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+	0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+	0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+	0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+	0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+	0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+};
+
+uint16_t bswap(uint16_t s)
+{
+	return (s >> 8) | (s << 8);
+}
 
 void chip8_initialise(struct chip8 *chip)
 {
@@ -23,7 +49,7 @@ void chip8_initialise(struct chip8 *chip)
 	memset(chip->memory, 0, CHIP8_MEMORY_SIZE * sizeof(chip->memory[0]));
 
 	// Load fontset
-	// TODO: Implement
+	memcpy(chip->memory + CHIP8_FONTSET_START, chip8_fontset, 80);	
 
 	// Reset timers
 	chip->delay_timer = 0;
@@ -34,9 +60,19 @@ void chip8_initialise(struct chip8 *chip)
 
 void chip8_load_rom(struct chip8* chip, const char *filename)
 {
+        size_t read;
 	FILE *rom = fopen(filename, "r");
-	fread(&(chip->memory[CHIP8_PROGRAM_START]), 1, CHIP8_MEMORY_SIZE - CHIP8_PROGRAM_START, rom);
+        if (rom == NULL)
+        {
+                fprintf(stderr, "Error opening file: %s\n", filename);
+                exit(1);
+        }
+	read = fread(&(chip->memory[CHIP8_PROGRAM_START]), 1, CHIP8_MEMORY_SIZE - CHIP8_PROGRAM_START, rom);
 	fclose(rom);
+        if (read == 0) {
+                fprintf(stderr, "Error reading from file: %s\n", filename);
+                exit(1);
+        }
 }
 
 void chip8_clear_screen(struct chip8 *chip)
@@ -153,7 +189,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 				case 0x0004:
 					chip->V[x] += chip->V[y];
 					// Check for overflow
-					if(chip->V[x] < chip->V[y]) {
+					if (chip->V[x] < chip->V[y]) {
 						chip->V[0xF] = 1;
 					} else {
 						chip->V[0xF] = 0;
@@ -163,7 +199,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 				// 0x8XY5: Set VX -= VY
 				case 0x0005:
 					// Check if underflow will occur
-					if(chip->V[x] < chip->V[y]) {
+					if (chip->V[x] < chip->V[y]) {
 						chip->V[0xF] = 0;
 					} else {
 						chip->V[0xF] = 1;
@@ -181,7 +217,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 				// 0x8XY7: Set VX = VY - VX
 				case 0x0007:
 					// Check if underflow will occur
-					if(chip->V[x] > chip->V[y]) {
+					if (chip->V[x] > chip->V[y]) {
 						chip->V[0xF] = 0;
 					} else {
 						chip->V[0xF] = 1;
@@ -211,7 +247,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 			
 		// 0xANNN: Sets I to address NNN
 		case 0xA000:
-			chip->I = (chip->opcode & 0x0FFF);
+			chip->I = chip->opcode & 0x0FFF;
 			break;
 			
 		// 0xBNNN: Jump to address V0 + NNN
@@ -231,11 +267,11 @@ void chip8_emulate_cycle(struct chip8 *chip)
 				uint16_t pixel;
 
 				chip->V[0xF] = 0;
-				for(uint16_t yline = 0; yline < height; ++yline) {
+				for (uint16_t yline = 0; yline < height; ++yline) {
 					pixel = chip->memory[chip->I + yline];
-					for(uint16_t xline = 0; xline < 8; ++xline) {
-						if((pixel & (0x80 >> xline)) != 0) {
-							if(chip->gfx[(x + xline + ((y + yline) * CHIP8_SCREEN_WIDTH))] == 1) {
+					for (uint16_t xline = 0; xline < 8; ++xline) {
+						if ((pixel & (0x80 >> xline)) != 0) {
+							if (chip->gfx[(x + xline + ((y + yline) * CHIP8_SCREEN_WIDTH))] == 1) {
 								chip->V[0xf] = 1;
 							}
 							chip->gfx[(x + xline + ((y + yline) * CHIP8_SCREEN_WIDTH))] ^= 1;
@@ -259,6 +295,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 				case 0x00A1:
 					// TODO: Implement
 					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
+					chip->pc += 2;
 					break;
 
 				default:
@@ -295,7 +332,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 				case 0x001E:
 					chip->I += chip->V[x];
 					// Check for overflow
-					if(chip->I < chip->V[x] || chip->I > 0xFFF) {
+					if (chip->I < chip->V[x] || chip->I > 0xFFF) {
 						chip->V[0xF] = 1;
 					} else {
 						chip->V[0xF] = 0;
@@ -304,30 +341,24 @@ void chip8_emulate_cycle(struct chip8 *chip)
 
 				// 0xFX29: Sets I to the location of sprite VX
 				case 0x0029:
-					// TODO: Implement
-					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
+					chip->I = CHIP8_FONTSET_START + 5 * chip->V[x];
 					break;
 
 				// 0xFX33: Store BCD(VX) at I
 				case 0x0033:
-					// TODO: Implement
-					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
+					chip->memory[chip->I] = chip->V[(chip->opcode & 0x0F00) >> 8] / 100;
+					chip->memory[chip->I + 1] = (chip->V[(chip->opcode & 0x0F00) >> 8] / 10) % 10;
+					chip->memory[chip->I + 2] = (chip->V[(chip->opcode & 0x0F00) >> 8] % 100) % 10;
 					break;
 
 				// 0xFX55: Stores from V0 to VX in memory at I
 				case 0x0055:
-					for(uint8_t i = 0; i <= x; i++) {
-						chip->memory[chip->I] = chip->V[i];
-						++(chip->I);
-					}
+					memcpy(chip->memory + chip->I, chip->V, x);
 					break;
 
 				// 0xFX65: Loads V0 to VX from memory at I
 				case 0x0065:
-					for(uint8_t i = 0; i <= x; i++) {
-						chip->V[i] = chip->memory[chip->I];
-						++(chip->I);
-					}
+					memcpy(chip->V, chip->memory + chip->I, x);
 					break;
 
 				default:
@@ -339,5 +370,21 @@ void chip8_emulate_cycle(struct chip8 *chip)
 		default:
 			break;
 	}
+	if (chip->delay_timer > 0) {
+		--chip->delay_timer;
+	}
+	if (chip->sound_timer > 0) {
+		if (chip->sound_timer == 1) {
+			printf("BEEP!\n");
+		}
+		--chip->sound_timer;
+	}
 }
 
+void chip8_print_state(struct chip8 *chip)
+{
+	printf("Registers:\n");
+	for (uint16_t i = 0; i < CHIP8_REGISTER_SIZE; i++) {
+		printf("\tV%01X: %u\n", i, chip->V[i]);
+	}	
+}

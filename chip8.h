@@ -39,4 +39,7 @@ void chip8_clear_screen(struct chip8 *chip);
 // Step one cycle
 void chip8_emulate_cycle(struct chip8* chip);
 
+// Print the internal state of the emulator
+void chip8_print_state(struct chip8 *chip);
+
 #endif /* CHIP8_H */
