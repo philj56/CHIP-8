@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 	chip8_window_initialise(&win);
 
 	while (true) {
-		printf("%04X\n", chip.opcode);
+		//printf("%04X\n", chip.opcode);
 		while (SDL_PollEvent(&e) != 0) {
 			if (e.type == SDL_QUIT) {
 				SDL_Quit();

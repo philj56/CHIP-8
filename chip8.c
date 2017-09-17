@@ -90,8 +90,12 @@ void chip8_emulate_cycle(struct chip8 *chip)
 	chip->pc += 2;
 	
 	// Prefetch register numbers used in many operations
-	uint8_t x = chip->opcode & 0x0F00 >> 2;
-	uint8_t y = chip->opcode & 0x00F0 >> 1;
+	uint8_t x = (chip->opcode & 0x0F00) >> 8;
+	uint8_t y = (chip->opcode & 0x00F0) >> 4;
+				
+	//printf("opcode %04X\n", chip->opcode);
+	//printf("x = %01X\n", x);
+	//printf("y = %01X\n", y);
 
 	// Decode opcode
 	switch(chip->opcode & 0xF000)

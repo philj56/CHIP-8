@@ -4,14 +4,13 @@
 
 void chip8_window_initialise(struct chip8_window *win)
 {
-    // Create an application window with the following settings:
     win->window = SDL_CreateWindow(
         "CHIP-8",                  // window title
-        SDL_WINDOWPOS_UNDEFINED,           // initial x position
-        SDL_WINDOWPOS_UNDEFINED,           // initial y position
-        640,                               // width, in pixels
-        320,                               // height, in pixels
-        SDL_WINDOW_OPENGL                  // flags - see below
+        SDL_WINDOWPOS_UNDEFINED,   // initial x position
+        SDL_WINDOWPOS_UNDEFINED,   // initial y position
+        640,                       // width, in pixels
+        320,                       // height, in pixels
+        SDL_WINDOW_OPENGL          // flags - see below
     );
 
     win->renderer = SDL_CreateRenderer(win->window, -1, SDL_RENDERER_ACCELERATED);
@@ -27,7 +26,6 @@ void chip8_window_initialise(struct chip8_window *win)
         fprintf(stderr, "Could not create window: %s\n", SDL_GetError());
 	exit(1);
     }
-	
 }
 
 void chip8_window_draw(struct chip8_window *win, struct chip8 *chip)
@@ -38,7 +36,6 @@ void chip8_window_draw(struct chip8_window *win, struct chip8 *chip)
 
     SDL_UpdateTexture(win->texture, NULL, win->buffer, CHIP8_SCREEN_WIDTH*sizeof(win->buffer[0]));
 
-    // The window is open: could enter program loop here (see SDL_PollEvent())
     SDL_RenderClear(win->renderer);
     SDL_RenderCopy(win->renderer, win->texture, NULL, NULL);
     SDL_RenderPresent(win->renderer);
