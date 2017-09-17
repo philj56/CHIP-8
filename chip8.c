@@ -28,6 +28,8 @@ void chip8_initialise(struct chip8 *chip)
 	// Reset timers
 	chip->delay_timer = 0;
 	chip->sound_timer = 0;	
+
+	chip->redraw = true;
 }
 
 void chip8_load_rom(struct chip8* chip, const char *filename)
@@ -44,6 +46,9 @@ void chip8_clear_screen(struct chip8 *chip)
 
 void chip8_emulate_cycle(struct chip8 *chip)
 {
+	// Don't redraw unless necessary
+	chip->redraw = false;
+
 	// Fetch opcode
 	chip->opcode = chip->memory[chip->pc] << 8 | chip->memory[chip->pc + 1];
 	chip->pc += 2;
@@ -61,6 +66,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 				// 0x00E0: Clear the screen
 				case 0x00E0:
 					chip8_clear_screen(chip);
+					chip->redraw = true;
 					break;
 					
 				// 0x00EE: Return
@@ -220,8 +226,24 @@ void chip8_emulate_cycle(struct chip8 *chip)
 			
 		// 0xDXYN: Draw 8xN sprite at (VX, VY)
 		case 0xD000:
-			// TODO: Implement
-			fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
+			{
+				uint16_t height = chip->opcode & 0x000F;
+				uint16_t pixel;
+
+				chip->V[0xF] = 0;
+				for(uint16_t yline = 0; yline < height; ++yline) {
+					pixel = chip->memory[chip->I + yline];
+					for(uint16_t xline = 0; xline < 8; ++xline) {
+						if((pixel & (0x80 >> xline)) != 0) {
+							if(chip->gfx[(x + xline + ((y + yline) * CHIP8_SCREEN_WIDTH))] == 1) {
+								chip->V[0xf] = 1;
+							}
+							chip->gfx[(x + xline + ((y + yline) * CHIP8_SCREEN_WIDTH))] ^= 1;
+						}
+					}
+				}
+			}
+			chip->redraw = true;
 			break;
 			
 		case 0xE000:

@@ -2,12 +2,8 @@
 #define CHIP8_H
 
 #include <stdint.h>
-
-#define CHIP8_PROGRAM_START 0x200
-#define CHIP8_MEMORY_SIZE 4096
-#define CHIP8_STACK_SIZE 16
-#define CHIP8_REGISTER_SIZE 16
-#define CHIP8_SCREEN_SIZE 64*32
+#include <stdbool.h>
+#include "chip8_constants.h"
 
 struct chip8 {
 	// Memory 
@@ -26,6 +22,9 @@ struct chip8 {
 	// IO
 	uint8_t gfx[CHIP8_SCREEN_SIZE];	// Screen buffer
 	uint8_t key[16];	// Keypad
+
+	// Flags
+	bool redraw;
 };
 
 // Wipe all registers and memory
