@@ -20,26 +20,40 @@ const SDL_Keycode keymap[16] = {
 	SDLK_v	// F
 };
 
-void chip8_input_process(struct chip8 *chip)
+void chip8_input_process(struct chip8 *chip, SDL_Event *e);
+
+void chip8_input_process_all(struct chip8 *chip)
 {
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0) {
-		if (e.type == SDL_QUIT) {
-			SDL_Quit();
-			exit(0);
-		} else {
-			if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
-				for (size_t i = 0; i < 16; i++) {
-					if (e.key.keysym.sym == keymap[i]) {
-						if (e.type == SDL_KEYDOWN) {
-							chip->key[i] = 1;
-						} else {
-							chip->key[i] = 0;
-						}
-						break;
+		chip8_input_process(chip, &e);
+	}
+}
+
+void chip8_input_process(struct chip8 *chip, SDL_Event *e)
+{
+	if (e->type == SDL_QUIT) {
+		SDL_Quit();
+		exit(0);
+	} else {
+		if (e->type == SDL_KEYDOWN || e->type == SDL_KEYUP) {
+			for (size_t i = 0; i < 16; i++) {
+				if (e->key.keysym.sym == keymap[i]) {
+					if (e->type == SDL_KEYDOWN) {
+						chip->key[i] = 1;
+					} else {
+						chip->key[i] = 0;
 					}
+					break;
 				}
 			}
 		}
 	}
+}
+
+void chip8_input_wait(struct chip8 *chip)
+{
+	SDL_Event e;
+	SDL_WaitEvent(&e);
+	chip8_input_process(chip, &e);
 }

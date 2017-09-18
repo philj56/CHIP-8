@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 	chip8_window_initialise(&win);
 
 	while (true) {
-		chip8_input_process(&chip);
+		chip8_input_process_all(&chip);
 
 		chip8_emulate_cycle(&chip);
 
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 			chip8_window_draw(&win, &chip);
 		}
 		
-		SDL_Delay(16);
+		SDL_Delay(2);
 		//chip8_print_state(&chip);
 	}
 

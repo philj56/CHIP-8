@@ -3,6 +3,7 @@
 #include <string.h>
 #include "chip8.h"
 #include "chip8_window.h"
+#include "chip8_input.h"
 
 const uint8_t chip8_fontset[80] =
 { 
@@ -275,10 +276,10 @@ void chip8_emulate_cycle(struct chip8 *chip)
 					pixel = chip->memory[chip->I + yline];
 					for (uint16_t xline = 0; xline < 8; ++xline) {
 						if ((pixel & (0x80 >> xline)) != 0) {
-							if (chip->gfx[(x + xline + ((y + yline) * CHIP8_SCREEN_WIDTH))] == 1) {
-								chip->V[0xf] = 1;
+							if (chip->gfx[(chip->V[x] + xline + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH))] == 1) {
+								chip->V[0xF] = 1;
 							}
-							chip->gfx[(x + xline + ((y + yline) * CHIP8_SCREEN_WIDTH))] ^= 1;
+							chip->gfx[(chip->V[x] + xline + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH))] ^= 1;
 						}
 					}
 				}
@@ -291,15 +292,16 @@ void chip8_emulate_cycle(struct chip8 *chip)
 			{
 				// 0xEX9E: Skip next instruction if key VX is pressed
 				case 0x009E:
-					// TODO: Implement
-					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
+					if (chip->key[chip->V[x]] != 0) {
+						chip->pc += 2;
+					}
 					break;
 				
 				// 0xEXA1: Skip next instruction if key VX is not pressed
 				case 0x00A1:
-					// TODO: Implement
-					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
-					chip->pc += 2;
+					if (chip->key[chip->V[x]] == 0) {
+						chip->pc += 2;
+					}
 					break;
 
 				default:
@@ -318,8 +320,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 
 				// 0xFX0A: Wait for keypress, and store in VX
 				case 0x000A:
-					// TODO: Implement
-					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
+					chip8_input_wait(chip);
 					break;
 
 				// 0xFX15: Set the delay timer to VX

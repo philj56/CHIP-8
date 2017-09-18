@@ -17,9 +17,13 @@ void chip8_window_initialise(struct chip8_window *win)
 	SDL_RenderSetLogicalSize(win->renderer, CHIP8_SCREEN_WIDTH, CHIP8_SCREEN_HEIGHT);
 
 	win->texture = SDL_CreateTexture(win->renderer,
-			SDL_PIXELFORMAT_RGB444,
+			SDL_PIXELFORMAT_RGB888,
 			SDL_TEXTUREACCESS_STREAMING,
 			CHIP8_SCREEN_WIDTH, CHIP8_SCREEN_HEIGHT);
+
+	for (size_t i = 0; i < CHIP8_SCREEN_SIZE; i++) {
+		win->buffer[i] = 0;
+	}
 
 	// Check that the window was successfully created
 	if (win->window == NULL) {
@@ -31,7 +35,17 @@ void chip8_window_initialise(struct chip8_window *win)
 void chip8_window_draw(struct chip8_window *win, struct chip8 *chip)
 {
 	for (size_t i = 0; i < CHIP8_SCREEN_SIZE; i++) {
-		win->buffer[i] = chip->gfx[i] * 0xFFFFFF;
+		if (win->buffer[i] > 0) {
+			// Check for potential underflow
+			if (win->buffer[i] < 0x202020) {
+				win->buffer[i] = 0;
+			} else {
+				win->buffer[i] -= 0x202020;
+			}
+		}
+		if (chip->gfx[i] > 0) {
+			win->buffer[i] = chip->gfx[i] * 0xFFFFFF;
+		}
 	}
 
 	SDL_UpdateTexture(win->texture, NULL, win->buffer, CHIP8_SCREEN_WIDTH*sizeof(win->buffer[0]));

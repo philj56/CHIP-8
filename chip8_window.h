@@ -9,7 +9,7 @@ struct chip8_window {
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	SDL_Texture *texture;
-	uint16_t buffer[CHIP8_SCREEN_SIZE];
+	uint32_t buffer[CHIP8_SCREEN_SIZE];
 };
 
 void chip8_window_initialise(struct chip8_window *win);
