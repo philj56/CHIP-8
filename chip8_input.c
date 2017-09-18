@@ -20,7 +20,11 @@ const SDL_Keycode keymap[16] = {
 	SDLK_v	// F
 };
 
-void chip8_input_process(struct chip8 *chip, SDL_Event *e);
+// Returns result of input:
+// 0: Keydown
+// 1: Keyup
+// 2: Non-emulated key
+int chip8_input_process(struct chip8 *chip, SDL_Event *e);
 
 void chip8_input_process_all(struct chip8 *chip)
 {
@@ -30,8 +34,9 @@ void chip8_input_process_all(struct chip8 *chip)
 	}
 }
 
-void chip8_input_process(struct chip8 *chip, SDL_Event *e)
+int chip8_input_process(struct chip8 *chip, SDL_Event *e)
 {
+	int result = 2;
 	if (e->type == SDL_QUIT) {
 		SDL_Quit();
 		exit(0);
@@ -41,19 +46,25 @@ void chip8_input_process(struct chip8 *chip, SDL_Event *e)
 				if (e->key.keysym.sym == keymap[i]) {
 					if (e->type == SDL_KEYDOWN) {
 						chip->key[i] = 1;
+						result = 0;
 					} else {
 						chip->key[i] = 0;
+						result = 1;
 					}
 					break;
 				}
 			}
 		}
 	}
+	return result;
 }
 
 void chip8_input_wait(struct chip8 *chip)
 {
 	SDL_Event e;
 	SDL_WaitEvent(&e);
-	chip8_input_process(chip, &e);
+	while (chip8_input_process(chip, &e) != 0)
+	{
+		SDL_WaitEvent(&e);
+	}
 }

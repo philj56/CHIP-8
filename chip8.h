@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <sys/time.h>
 #include "chip8_constants.h"
 
 struct chip8 {
@@ -25,6 +26,10 @@ struct chip8 {
 
 	// Flags
 	bool redraw;
+
+	// Internal timer
+	struct timeval last_tick;
+	struct timeval time;
 };
 
 // Wipe all registers and memory

@@ -53,6 +53,3 @@ dkms.conf
 
 # Vim files
 *.swp
-
-# Games
-roms/

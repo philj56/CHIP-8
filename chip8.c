@@ -55,6 +55,8 @@ void chip8_initialise(struct chip8 *chip)
 	// Reset timers
 	chip->delay_timer = 0;
 	chip->sound_timer = 0;	
+	gettimeofday(&(chip->last_tick), NULL);
+	gettimeofday(&(chip->time), NULL);
 
 	chip->redraw = true;
 }
@@ -375,14 +377,21 @@ void chip8_emulate_cycle(struct chip8 *chip)
 		default:
 			break;
 	}
-	if (chip->delay_timer > 0) {
-		--chip->delay_timer;
-	}
-	if (chip->sound_timer > 0) {
-		if (chip->sound_timer == 1) {
-			printf("BEEP!\n");
+	gettimeofday(&(chip->time), NULL);
+	uint64_t delta_ms = (chip->time.tv_sec - chip->last_tick.tv_sec) * 1000 
+		+ (chip->time.tv_usec - chip->last_tick.tv_usec) / 1000;
+	if (delta_ms > 16) {
+		chip->redraw = true;
+		chip->last_tick = chip->time;
+		if (chip->delay_timer > 0) {
+			--chip->delay_timer;
 		}
-		--chip->sound_timer;
+		if (chip->sound_timer > 0) {
+			if (chip->sound_timer == 1) {
+				printf("BEEP!\n");
+			}
+			--chip->sound_timer;
+		}
 	}
 }
 
