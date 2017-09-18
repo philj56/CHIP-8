@@ -48,9 +48,21 @@ void chip8_window_draw(struct chip8_window *win, struct chip8 *chip)
 		}
 	}
 
-	SDL_UpdateTexture(win->texture, NULL, win->buffer, CHIP8_SCREEN_WIDTH*sizeof(win->buffer[0]));
+	if (SDL_UpdateTexture(win->texture, NULL, win->buffer, CHIP8_SCREEN_WIDTH*sizeof(win->buffer[0])) < 0) {
+		fprintf(stderr, "Error updating texture: %s\n", SDL_GetError());
+		exit(1);
+	}
 
-	SDL_RenderClear(win->renderer);
-	SDL_RenderCopy(win->renderer, win->texture, NULL, NULL);
+	if (SDL_RenderClear(win->renderer) < 0) {
+		fprintf(stderr, "Error clearing renderer: %s\n", SDL_GetError());
+		if (win->renderer == NULL) {
+			printf("NULL Renderer!\n");
+		}
+		exit(1);
+	}
+	if (SDL_RenderCopy(win->renderer, win->texture, NULL, NULL) < 0) {
+		fprintf(stderr, "Error copying texture: %s\n", SDL_GetError());
+		exit(1);
+	}
 	SDL_RenderPresent(win->renderer);
 }
