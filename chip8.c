@@ -275,13 +275,19 @@ void chip8_emulate_cycle(struct chip8 *chip)
 
 				chip->V[0xF] = 0;
 				for (uint16_t yline = 0; yline < height; ++yline) {
+					if (chip->I + yline > CHIP8_MEMORY_SIZE) {
+						break;
+					}
 					pixel = chip->memory[chip->I + yline];
 					for (uint16_t xline = 0; xline < 8; ++xline) {
 						if ((pixel & (0x80 >> xline)) != 0) {
-							if (chip->gfx[(chip->V[x] + xline + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH))] == 1) {
+							if (chip->V[x] + xline + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH) > CHIP8_SCREEN_SIZE) {
+								break;
+							}
+							if (chip->gfx[chip->V[x] + xline + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH)] == 1) {
 								chip->V[0xF] = 1;
 							}
-							chip->gfx[(chip->V[x] + xline + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH))] ^= 1;
+							chip->gfx[chip->V[x] + xline + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH)] ^= 1;
 						}
 					}
 				}
@@ -353,9 +359,11 @@ void chip8_emulate_cycle(struct chip8 *chip)
 
 				// 0xFX33: Store BCD(VX) at I
 				case 0x0033:
-					chip->memory[chip->I] = chip->V[(chip->opcode & 0x0F00) >> 8] / 100;
-					chip->memory[chip->I + 1] = (chip->V[(chip->opcode & 0x0F00) >> 8] / 10) % 10;
-					chip->memory[chip->I + 2] = (chip->V[(chip->opcode & 0x0F00) >> 8] % 100) % 10;
+					if (chip->I < CHIP8_MEMORY_SIZE + 3) {
+						chip->memory[chip->I] = chip->V[(chip->opcode & 0x0F00) >> 8] / 100;
+						chip->memory[chip->I + 1] = (chip->V[(chip->opcode & 0x0F00) >> 8] / 10) % 10;
+						chip->memory[chip->I + 2] = (chip->V[(chip->opcode & 0x0F00) >> 8] % 100) % 10;
+					}
 					break;
 
 				// 0xFX55: Stores from V0 to VX in memory at I
@@ -397,8 +405,35 @@ void chip8_emulate_cycle(struct chip8 *chip)
 
 void chip8_print_state(struct chip8 *chip)
 {
+	printf("\nOpcode %04X\n", chip->opcode);
 	printf("Registers:\n");
-	for (uint16_t i = 0; i < CHIP8_REGISTER_SIZE; i++) {
+	for (unsigned int i = 0; i < CHIP8_REGISTER_SIZE; i++) {
 		printf("\tV%01X: %u\n", i, chip->V[i]);
 	}	
+	printf("\tI:  %u\n", chip->I);
+	printf("\tpc: %u\n", chip->pc);
+	printf("\tsp: %u\n", chip->sp);
+
+	printf("Timers:\n");
+	printf("\tDelay: %u\n", chip->delay_timer);
+	printf("\tSound: %u\n", chip->sound_timer);
+
+	printf("Screen:\n");
+	printf("\t ");
+	for (size_t i = 0; i < CHIP8_SCREEN_WIDTH; i++) {
+		printf("-");
+	}
+	printf("\n");
+	for (size_t i = 0; i < CHIP8_SCREEN_HEIGHT; i++) {
+		printf("\t|");
+		for (size_t j = 0; j < CHIP8_SCREEN_WIDTH; j++) {
+			printf("%s", chip->gfx[i * CHIP8_SCREEN_WIDTH + j] ? "█" : " ");
+		}
+		printf("|\n");
+	}
+	printf("\t ");
+	for (size_t i = 0; i < CHIP8_SCREEN_WIDTH; i++) {
+		printf("-");
+	}
+	printf("\n");
 }

@@ -24,7 +24,7 @@ const SDL_Keycode keymap[16] = {
 // 0: Keydown
 // 1: Keyup
 // 2: Non-emulated key
-int chip8_input_process(struct chip8 *chip, SDL_Event *e);
+int chip8_input_process(struct chip8 *chip, const SDL_Event *e);
 
 void chip8_input_process_all(struct chip8 *chip)
 {
@@ -34,7 +34,7 @@ void chip8_input_process_all(struct chip8 *chip)
 	}
 }
 
-int chip8_input_process(struct chip8 *chip, SDL_Event *e)
+int chip8_input_process(struct chip8 *chip, const SDL_Event *e)
 {
 	int result = 2;
 	if (e->type == SDL_QUIT) {

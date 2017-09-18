@@ -29,14 +29,14 @@ int main(int argc, char **argv)
 		chip8_input_process_all(&chip);
 
 		chip8_emulate_cycle(&chip);
+		//printf("%04X\n", chip.opcode);
+		//chip8_print_state(&chip);
 
 		if (chip.redraw) {
 			chip8_window_draw(&win, &chip);
 		}
 		
 		nanosleep(&clock_time, NULL);
-		//SDL_Delay(1);
-		//chip8_print_state(&chip);
 	}
 
 	return 0;
