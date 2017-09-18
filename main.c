@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 #include "chip8.h"
 #include "chip8_window.h"
+#include "chip8_input.h"
 
 int main(int argc, char **argv)
 {
@@ -12,7 +13,6 @@ int main(int argc, char **argv)
 	}
 	struct chip8 chip;
 	struct chip8_window win;
-	SDL_Event e;
 
 	chip8_initialise(&chip);
 
@@ -22,14 +22,10 @@ int main(int argc, char **argv)
 	chip8_window_initialise(&win);
 
 	while (true) {
-		//printf("%04X\n", chip.opcode);
-		while (SDL_PollEvent(&e) != 0) {
-			if (e.type == SDL_QUIT) {
-				SDL_Quit();
-				exit(0);
-			}
-		}
+		chip8_input_process(&chip);
+
 		chip8_emulate_cycle(&chip);
+
 		if (chip.redraw) {
 			chip8_window_draw(&win, &chip);
 		}
