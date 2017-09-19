@@ -328,7 +328,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 
 				// 0xFX0A: Wait for keypress, and store in VX
 				case 0x000A:
-					chip8_input_wait(chip);
+					chip->V[x] = chip8_input_wait();
 					break;
 
 				// 0xFX15: Set the delay timer to VX
@@ -410,15 +410,15 @@ void chip8_print_state(struct chip8 *chip)
 	for (unsigned int i = 0; i < CHIP8_REGISTER_SIZE; i++) {
 		printf("\tV%01X: %u\n", i, chip->V[i]);
 	}	
-	printf("\tI:  %u\n", chip->I);
-	printf("\tpc: %u\n", chip->pc);
+	printf("\tI:  %04X\n", chip->I);
+	printf("\tpc: %04X\n", chip->pc);
 	printf("\tsp: %u\n", chip->sp);
 
 	printf("Timers:\n");
 	printf("\tDelay: %u\n", chip->delay_timer);
 	printf("\tSound: %u\n", chip->sound_timer);
 
-	printf("Screen:\n");
+/*	printf("Screen:\n");
 	printf("\t ");
 	for (size_t i = 0; i < CHIP8_SCREEN_WIDTH; i++) {
 		printf("-");
@@ -436,4 +436,5 @@ void chip8_print_state(struct chip8 *chip)
 		printf("-");
 	}
 	printf("\n");
+*/
 }

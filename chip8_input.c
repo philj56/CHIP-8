@@ -20,51 +20,50 @@ const SDL_Keycode keymap[16] = {
 	SDLK_v	// F
 };
 
-// Returns result of input:
-// 0: Keydown
-// 1: Keyup
-// 2: Non-emulated key
-int chip8_input_process(struct chip8 *chip, const SDL_Event *e);
+// Returns key that changed, or -1 for a non-emulated key
+int chip8_input_process(const SDL_Event *e);
 
 void chip8_input_process_all(struct chip8 *chip)
 {
 	SDL_Event e;
+	int key;
 	while (SDL_PollEvent(&e) != 0) {
-		chip8_input_process(chip, &e);
+		key = chip8_input_process(&e);
+		if (key < 0) {
+			continue;
+		}
+		if (e.type == SDL_KEYDOWN) {
+			chip->key[key] = 1;
+		} else {
+			chip->key[key] = 0;
+		}
 	}
 }
 
-int chip8_input_process(struct chip8 *chip, const SDL_Event *e)
+int chip8_input_process(const SDL_Event *e)
 {
-	int result = 2;
 	if (e->type == SDL_QUIT) {
 		SDL_Quit();
 		exit(0);
-	} else {
-		if (e->type == SDL_KEYDOWN || e->type == SDL_KEYUP) {
-			for (size_t i = 0; i < 16; i++) {
-				if (e->key.keysym.sym == keymap[i]) {
-					if (e->type == SDL_KEYDOWN) {
-						chip->key[i] = 1;
-						result = 0;
-					} else {
-						chip->key[i] = 0;
-						result = 1;
-					}
-					break;
-				}
+	} else if (e->type == SDL_KEYDOWN || e->type == SDL_KEYUP) {
+		for (size_t i = 0; i < 16; i++) {
+			if (e->key.keysym.sym == keymap[i]) {
+				return i;
 			}
 		}
 	}
-	return result;
+	return -1;
 }
 
-void chip8_input_wait(struct chip8 *chip)
+int chip8_input_wait()
 {
 	SDL_Event e;
+	int key;
+
 	SDL_WaitEvent(&e);
-	while (chip8_input_process(chip, &e) != 0)
+	while ((key = chip8_input_process(&e)) < 0 || e.type != SDL_KEYDOWN)
 	{
 		SDL_WaitEvent(&e);
 	}
+	return key;
 }

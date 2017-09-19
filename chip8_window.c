@@ -57,7 +57,7 @@ void chip8_window_draw(struct chip8_window *win, struct chip8 *chip)
 	int err;
 
 	for (size_t i = 0; i < CHIP8_SCREEN_SIZE; i++) {
-		if (win->buffer[i] > 0) {
+/*		if (win->buffer[i] > 0) {
 			// Check for potential underflow
 			if (win->buffer[i] < 0x202020) {
 				win->buffer[i] = 0;
@@ -66,8 +66,8 @@ void chip8_window_draw(struct chip8_window *win, struct chip8 *chip)
 			}
 		}
 		if (chip->gfx[i] > 0) {
-			win->buffer[i] = chip->gfx[i] * 0xFFFFFF;
-		}
+*/			win->buffer[i] = chip->gfx[i] * 0xFFFFFF;
+//		}
 	}
 
 	err = SDL_UpdateTexture(win->texture, NULL, win->buffer, CHIP8_SCREEN_WIDTH * sizeof(win->buffer[0]));
