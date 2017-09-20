@@ -25,7 +25,8 @@ struct chip8 {
 	uint8_t key[16];	// Keypad
 
 	// Flags
-	bool original_bitshift;
+	bool original_bitshift;	// Use original version of opcodes 8XY6 & 8XYE
+	bool original_regdump;	// Use original version of opcodes FX55 & FX65
 
 	// Internal timer
 	struct timeval last_tick;

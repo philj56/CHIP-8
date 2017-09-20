@@ -57,8 +57,9 @@ void chip8_initialise(struct chip8 *chip)
 	gettimeofday(&(chip->last_tick), NULL);
 	gettimeofday(&(chip->time), NULL);
 
-	// By default, don't use original bitshift operations
-	chip->original_bitshift = false;
+	// Default usage of original opcode behaviours
+	chip->original_bitshift = true;
+	chip->original_regdump = true;
 }
 
 void chip8_load_rom(struct chip8* chip, const char *filename)
@@ -351,13 +352,17 @@ void chip8_emulate_cycle(struct chip8 *chip)
 				// 0xFX55: Stores from V0 to VX in memory at I
 				case 0x0055:
 					memcpy(chip->memory + chip->I, chip->V, x + 1);
-					chip->I += x + 1;
+					if (chip->original_regdump) {
+						chip->I += x + 1;
+					}
 					break;
 
 				// 0xFX65: Loads V0 to VX from memory at I
 				case 0x0065:
 					memcpy(chip->V, chip->memory + chip->I, x + 1);
-					chip->I += x + 1;
+					if (chip->original_regdump) {
+						chip->I += x + 1;
+					}
 					break;
 
 				default:
