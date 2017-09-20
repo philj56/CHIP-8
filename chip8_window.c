@@ -90,7 +90,7 @@ static int chip8_window_thread_function(void *window)
 	while (!(win->quit)) {
 		for (size_t i = 0; i < CHIP8_SCREEN_SIZE; i++) {
 			win->buffer[i] >>= 16;
-			win->buffer[i] *= 0.5;
+			win->buffer[i] *= 0.7;
 			win->buffer[i] |= (win->buffer[i] << 8) | (win->buffer[i] << 16);
 			win->buffer[i] |= win->chip->gfx[i] * 0xFFFFFF;
 		}

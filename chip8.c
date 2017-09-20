@@ -281,13 +281,13 @@ void chip8_emulate_cycle(struct chip8 *chip)
 					pixel = chip->memory[chip->I + yline];
 					for (uint16_t xline = 0; xline < 8; ++xline) {
 						if ((pixel & (0x80 >> xline)) != 0) {
-							if (chip->V[x] + xline + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH) > CHIP8_SCREEN_SIZE) {
+							if ((chip->V[x] + xline) % CHIP8_SCREEN_WIDTH + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH) > CHIP8_SCREEN_SIZE) {
 								break;
 							}
-							if (chip->gfx[chip->V[x] + xline + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH)] == 1) {
+							if (chip->gfx[(chip->V[x] + xline) % CHIP8_SCREEN_WIDTH + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH)] == 1) {
 								chip->V[0xF] = 1;
 							}
-							chip->gfx[chip->V[x] + xline + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH)] ^= 1;
+							chip->gfx[(chip->V[x] + xline) % CHIP8_SCREEN_WIDTH + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH)] ^= 1;
 						}
 					}
 				}
@@ -395,11 +395,10 @@ void chip8_emulate_cycle(struct chip8 *chip)
 			--chip->delay_timer;
 		}
 		if (chip->sound_timer > 0) {
-//			if (chip->sound_timer == 1) {
-				chip8_audio_beep();
-				printf("BEEP!\n");
-//			}
+			chip8_audio_on();
 			--chip->sound_timer;
+		} else {
+			chip8_audio_off();
 		}
 	}
 }
