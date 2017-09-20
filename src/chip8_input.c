@@ -44,7 +44,6 @@ void chip8_input_process_all(struct chip8 *chip)
 int chip8_input_process(const SDL_Event *e)
 {
 	if (e->type == SDL_QUIT) {
-		chip8_window_quit();
 		exit(0);
 	} else if (e->type == SDL_KEYDOWN || e->type == SDL_KEYUP) {
 		for (size_t i = 0; i < 16; i++) {

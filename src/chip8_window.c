@@ -5,21 +5,19 @@
 static int chip8_window_thread_function(void *window);
 
 SDL_Thread *chip8_window_thread;
-struct chip8_window *chip8_window;
+struct chip8_window chip8_window;
 
 void chip8_window_initialise(struct chip8 *chip)
 {
 	SDL_Init(0);
 
-	chip8_window = malloc(sizeof(struct chip8_window));
-
-	chip8_window->chip = chip;
-	chip8_window->quit = false;
+	chip8_window.chip = chip;
+	chip8_window.quit = false;
 
 	chip8_window_thread = SDL_CreateThread(
 			chip8_window_thread_function, 
 			"RenderingThread", 
-			(void *)chip8_window);
+			(void *)(&chip8_window));
 
 	if (chip8_window_thread == NULL) {
 		fprintf(stderr, "Error creating rendering thread: %s\n", SDL_GetError());
@@ -28,10 +26,12 @@ void chip8_window_initialise(struct chip8 *chip)
 
 void chip8_window_quit()
 {
-	chip8_window->quit = true;
+	chip8_window.quit = true;
 	SDL_WaitThread(chip8_window_thread, NULL);
+	SDL_DestroyTexture(chip8_window.texture);
+	SDL_DestroyRenderer(chip8_window.renderer);
+	SDL_DestroyWindow(chip8_window.window);
 	SDL_Quit();
-	chip8_window = NULL;
 }
 
 static int chip8_window_thread_function(void *window)
@@ -52,6 +52,7 @@ static int chip8_window_thread_function(void *window)
 
 	if (win->window == NULL) {
 		fprintf(stderr, "Could not create window: %s\n", SDL_GetError());
+		SDL_Quit();
 		exit(1);
 	}
 
@@ -63,6 +64,8 @@ static int chip8_window_thread_function(void *window)
 
 	if (win->renderer == NULL) {
 		fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
+		SDL_DestroyWindow(win->window);
+		SDL_Quit();
 		exit(1);
 	}
 
@@ -75,6 +78,9 @@ static int chip8_window_thread_function(void *window)
 
 	if (win->texture == NULL) {
 		fprintf(stderr, "Could not create texture: %s\n", SDL_GetError());
+		SDL_DestroyRenderer(win->renderer);
+		SDL_DestroyWindow(win->window);
+		SDL_Quit();
 		exit(1);
 	}
 
@@ -86,6 +92,8 @@ static int chip8_window_thread_function(void *window)
 	for (size_t i = 0; i < CHIP8_SCREEN_SIZE; i++) {
 		win->buffer[i] = 0;
 	}
+
+	atexit(chip8_window_quit);
 
 	while (!(win->quit)) {
 		for (size_t i = 0; i < CHIP8_SCREEN_SIZE; i++) {
@@ -130,6 +138,6 @@ static int chip8_window_thread_function(void *window)
 void chip8_window_redraw()
 {
 	for (size_t i = 0; i < CHIP8_SCREEN_SIZE; i++) {
-		chip8_window->buffer[i] |= chip8_window->chip->gfx[i] * 0xFFFFFF;
+		chip8_window.buffer[i] |= chip8_window.chip->gfx[i] * 0xFFFFFF;
 	}
 }
