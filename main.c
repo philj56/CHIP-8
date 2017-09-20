@@ -6,6 +6,7 @@
 #include "chip8.h"
 #include "chip8_window.h"
 #include "chip8_input.h"
+#include "chip8_audio.h"
 
 int main(int argc, char **argv)
 {
@@ -22,6 +23,8 @@ int main(int argc, char **argv)
 	chip8_load_rom(&chip, argv[1]);
 
 	chip8_window_initialise(&chip);
+
+	chip8_audio_initialise();
 
 	while (true) {
 		chip8_input_process_all(&chip);
