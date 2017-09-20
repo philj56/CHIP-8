@@ -1,5 +1,6 @@
 #include "chip8.h"
 #include "chip8_input.h"
+#include "chip8_window.h"
 
 const SDL_Keycode keymap[16] = {
 	SDLK_x,	// 0
@@ -43,7 +44,7 @@ void chip8_input_process_all(struct chip8 *chip)
 int chip8_input_process(const SDL_Event *e)
 {
 	if (e->type == SDL_QUIT) {
-		SDL_Quit();
+		chip8_window_quit();
 		exit(0);
 	} else if (e->type == SDL_KEYDOWN || e->type == SDL_KEYUP) {
 		for (size_t i = 0; i < 16; i++) {

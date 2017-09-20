@@ -46,6 +46,9 @@ void chip8_initialise(struct chip8 *chip)
 	chip->pc = CHIP8_PROGRAM_START;
 	chip->sp = 0;
 
+	// Clear keys
+	memset(chip->key, 0, 16 * sizeof(chip->key[0]));
+
 	// Clear memory
 	memset(chip->memory, 0, CHIP8_MEMORY_SIZE * sizeof(chip->memory[0]));
 
@@ -216,7 +219,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 
 				// 0x8XY6: Set VX = (VY >>= 1)
 				case 0x0006:
-					chip->V[0xF] = chip->V[y] & 0x000F;
+					chip->V[0xF] = chip->V[y] & 0x01;
 					chip->V[y] >>= 1;
 					chip->V[x] = chip->V[y];
 					break;
@@ -234,7 +237,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 
 				// 0x8XYE: Set VX = (VY <<= 1)
 				case 0x000E:
-					chip->V[0xF] = (chip->V[y] & (uint8_t)0xF000) >> 3;
+					chip->V[0xF] = (chip->V[y] & 0x80) >> 7;
 					chip->V[y] <<= 1;
 					chip->V[x] = chip->V[y];
 					break;
@@ -368,12 +371,12 @@ void chip8_emulate_cycle(struct chip8 *chip)
 
 				// 0xFX55: Stores from V0 to VX in memory at I
 				case 0x0055:
-					memcpy(chip->memory + chip->I, chip->V, x);
+					memcpy(chip->memory + chip->I, chip->V, x + 1);
 					break;
 
 				// 0xFX65: Loads V0 to VX from memory at I
 				case 0x0065:
-					memcpy(chip->V, chip->memory + chip->I, x);
+					memcpy(chip->V, chip->memory + chip->I, x + 1);
 					break;
 
 				default:
