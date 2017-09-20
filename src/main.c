@@ -33,10 +33,6 @@ int main(int argc, char **argv)
 		//printf("%04X\n", chip.opcode);
 		//chip8_print_state(&chip);
 
-		if (chip.redraw) {
-			chip8_window_redraw();
-		}
-		
 		nanosleep(&clock_time, NULL);
 	}
 

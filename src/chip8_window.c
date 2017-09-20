@@ -14,6 +14,12 @@ void chip8_window_initialise(struct chip8 *chip)
 	chip8_window.chip = chip;
 	chip8_window.quit = false;
 
+	chip8_window.sync = SDL_CreateMutex();
+	if (chip8_window.sync == NULL) {
+		fprintf(stderr, "Could not create mutex: %s\n", SDL_GetError());
+		exit(1);
+	}
+
 	chip8_window_thread = SDL_CreateThread(
 			chip8_window_thread_function, 
 			"RenderingThread", 
@@ -21,6 +27,7 @@ void chip8_window_initialise(struct chip8 *chip)
 
 	if (chip8_window_thread == NULL) {
 		fprintf(stderr, "Error creating rendering thread: %s\n", SDL_GetError());
+		exit(1);
 	}
 }
 
@@ -28,6 +35,7 @@ void chip8_window_quit()
 {
 	chip8_window.quit = true;
 	SDL_WaitThread(chip8_window_thread, NULL);
+	SDL_DestroyMutex(chip8_window.sync);
 	SDL_DestroyTexture(chip8_window.texture);
 	SDL_DestroyRenderer(chip8_window.renderer);
 	SDL_DestroyWindow(chip8_window.window);
@@ -38,7 +46,7 @@ static int chip8_window_thread_function(void *window)
 {
 	int err;
 	struct chip8_window *win = (struct chip8_window *)window;
-	
+
 	SDL_InitSubSystem(SDL_INIT_VIDEO);
 
 	win->window = SDL_CreateWindow(
@@ -52,6 +60,7 @@ static int chip8_window_thread_function(void *window)
 
 	if (win->window == NULL) {
 		fprintf(stderr, "Could not create window: %s\n", SDL_GetError());
+		SDL_DestroyMutex(win->sync);
 		SDL_Quit();
 		exit(1);
 	}
@@ -65,6 +74,7 @@ static int chip8_window_thread_function(void *window)
 	if (win->renderer == NULL) {
 		fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
 		SDL_DestroyWindow(win->window);
+		SDL_DestroyMutex(win->sync);
 		SDL_Quit();
 		exit(1);
 	}
@@ -80,6 +90,7 @@ static int chip8_window_thread_function(void *window)
 		fprintf(stderr, "Could not create texture: %s\n", SDL_GetError());
 		SDL_DestroyRenderer(win->renderer);
 		SDL_DestroyWindow(win->window);
+		SDL_DestroyMutex(win->sync);
 		SDL_Quit();
 		exit(1);
 	}
@@ -96,11 +107,17 @@ static int chip8_window_thread_function(void *window)
 	atexit(chip8_window_quit);
 
 	while (!(win->quit)) {
+		if (SDL_LockMutex(win->sync) < 0) {
+			fprintf(stderr, "Could not lock mutex: %s\n", SDL_GetError());
+		}
 		for (size_t i = 0; i < CHIP8_SCREEN_SIZE; i++) {
 			win->buffer[i] >>= 16;
 			win->buffer[i] *= 0.7;
 			win->buffer[i] |= (win->buffer[i] << 8) | (win->buffer[i] << 16);
 			win->buffer[i] |= win->chip->gfx[i] * 0xFFFFFF;
+		}
+		if (SDL_UnlockMutex(win->sync) < 0) {
+			fprintf(stderr, "Could not unlock mutex: %s\n", SDL_GetError());
 		}
 		err = SDL_UpdateTexture(
 				win->texture, 
@@ -135,9 +152,43 @@ static int chip8_window_thread_function(void *window)
 	return 0;
 }
 
-void chip8_window_redraw()
+void chip8_window_draw_sprite(struct chip8 *chip, uint8_t x, uint8_t y)
 {
-	for (size_t i = 0; i < CHIP8_SCREEN_SIZE; i++) {
-		chip8_window.buffer[i] |= chip8_window.chip->gfx[i] * 0xFFFFFF;
+	uint16_t height = chip->opcode & 0x000F;
+	uint8_t sprite_row;
+	uint8_t px;
+	uint8_t py;
+	uint16_t pixel;
+	uint8_t pv;
+
+	x %= CHIP8_SCREEN_WIDTH;
+	y %= CHIP8_SCREEN_HEIGHT;
+
+	chip->V[0xF] = 0;
+	if (SDL_LockMutex(chip8_window.sync) < 0) {
+		fprintf(stderr, "Could not lock mutex: %s\n", SDL_GetError());
+	}
+	for (uint8_t yline = 0; yline < height; ++yline) {
+		if (chip->I + yline > CHIP8_MEMORY_SIZE) {
+			break;
+		}
+		sprite_row = chip->memory[chip->I + yline];
+		py = y + yline;
+		if (py >= CHIP8_SCREEN_HEIGHT) {
+			break;
+		}
+		for (uint8_t xline = 0; xline < 8; ++xline) {
+			px = x + xline;
+			if (px >= CHIP8_SCREEN_WIDTH) {
+				break;
+			}
+			pv = (sprite_row & (0x80 >> xline)) >> (7 - xline);
+			pixel = (px + py * CHIP8_SCREEN_WIDTH);
+			chip->V[0xF] |= (chip->gfx[pixel] & pv);
+			chip->gfx[pixel] ^= pv;
+		}
+	}
+	if (SDL_UnlockMutex(chip8_window.sync) < 0) {
+		fprintf(stderr, "Could not unlock mutex: %s\n", SDL_GetError());
 	}
 }

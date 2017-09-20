@@ -25,9 +25,9 @@ void chip8_audio_initialise()
 	spec.samples = CHIP8_AUDIO_SAMPLES;
 	spec.callback = chip8_audio_callback;
 	spec.userdata = &n;
-	
+
 	SDL_InitSubSystem(SDL_INIT_AUDIO);
-	
+
 	dev = SDL_OpenAudioDevice(NULL, 0, &spec, NULL, SDL_AUDIO_ALLOW_ANY_CHANGE);
 	if (dev == 0) {
 		fprintf(stderr, "Failed to open audio: %s", SDL_GetError());

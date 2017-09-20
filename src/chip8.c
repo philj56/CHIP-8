@@ -26,14 +26,9 @@ const uint8_t chip8_fontset[80] =
 	0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
-uint16_t bswap(uint16_t s)
-{
-	return (s >> 8) | (s << 8);
-}
-
 void chip8_initialise(struct chip8 *chip)
 {
-	chip->opcode = 0;	
+	chip->opcode = 0;
 
 	// Clear display
 	chip8_clear_screen(chip);
@@ -61,25 +56,23 @@ void chip8_initialise(struct chip8 *chip)
 	chip->sound_timer = 0;	
 	gettimeofday(&(chip->last_tick), NULL);
 	gettimeofday(&(chip->time), NULL);
-
-	chip->redraw = true;
 }
 
 void chip8_load_rom(struct chip8* chip, const char *filename)
 {
-        size_t read;
+	size_t read;
 	FILE *rom = fopen(filename, "r");
-        if (rom == NULL)
-        {
-                fprintf(stderr, "Error opening file: %s\n", filename);
-                exit(1);
-        }
+	if (rom == NULL)
+	{
+		fprintf(stderr, "Error opening file: %s\n", filename);
+		exit(1);
+	}
 	read = fread(&(chip->memory[CHIP8_PROGRAM_START]), 1, CHIP8_MEMORY_SIZE - CHIP8_PROGRAM_START, rom);
 	fclose(rom);
-        if (read == 0) {
-                fprintf(stderr, "Error reading from file: %s\n", filename);
-                exit(1);
-        }
+	if (read == 0) {
+		fprintf(stderr, "Error reading from file: %s\n", filename);
+		exit(1);
+	}
 }
 
 void chip8_clear_screen(struct chip8 *chip)
@@ -89,13 +82,10 @@ void chip8_clear_screen(struct chip8 *chip)
 
 void chip8_emulate_cycle(struct chip8 *chip)
 {
-	// Don't redraw unless necessary
-	chip->redraw = false;
-
 	// Fetch opcode
 	chip->opcode = chip->memory[chip->pc] << 8 | chip->memory[chip->pc + 1];
 	chip->pc += 2;
-	
+
 	// Prefetch register numbers used in many operations
 	uint8_t x = (chip->opcode & 0x0F00) >> 8;
 	uint8_t y = (chip->opcode & 0x00F0) >> 4;
@@ -109,66 +99,65 @@ void chip8_emulate_cycle(struct chip8 *chip)
 				// 0x00E0: Clear the screen
 				case 0x00E0:
 					chip8_clear_screen(chip);
-					chip->redraw = true;
 					break;
-					
-				// 0x00EE: Return
+
+					// 0x00EE: Return
 				case 0x00EE:
 					--(chip->sp);
 					chip->pc = chip->stack[chip->sp];
 					break;
-					
-				// 0x0NNN: Call RCA 1802 at NNN
+
+					// 0x0NNN: Call RCA 1802 at NNN
 				default:
 					// TODO: Implement
 					fprintf(stderr, "Unimplemented opcode 0x%04X\n", chip->opcode);			
 					break;
 			}
 			break;
-			
-		// 0x1NNN: Jump to address NNN
+
+			// 0x1NNN: Jump to address NNN
 		case 0x1000:
 			chip->pc = chip->opcode & 0x0FFF;
 			break;
-			
-		// 0x2NNN: Call subroutine at NNN
+
+			// 0x2NNN: Call subroutine at NNN
 		case 0x2000:
 			chip->stack[chip->sp] = chip->pc;
 			++(chip->sp);
 			chip->pc = chip->opcode & 0x0FFF;
 			break;
-			
-		// 0x3XNN: Skip next instruction if VX == NN 
+
+			// 0x3XNN: Skip next instruction if VX == NN 
 		case 0x3000:
 			if (chip->V[x] == (chip->opcode & 0x00FF)) {
 				chip->pc += 2;
 			}
 			break;
-			
-		// 0x4XNN: Skip next instruction if VX != NN
+
+			// 0x4XNN: Skip next instruction if VX != NN
 		case 0x4000:
 			if (chip->V[x] != (chip->opcode & 0x00FF)) {
 				chip->pc += 2;
 			}
 			break;
-			
-		// 0x5XY0: Skip next instruction if VX == VY
+
+			// 0x5XY0: Skip next instruction if VX == VY
 		case 0x5000:
 			if (chip->V[x] == chip->V[y]) {
 				chip->pc += 2;
 			}
 			break;
-			
-		// 0x6XNN: Set VX = NN
+
+			// 0x6XNN: Set VX = NN
 		case 0x6000:
 			chip->V[x] = chip->opcode & 0x00FF;
 			break;
-			
-		// 0x7XNN: Set VX += NN
+
+			// 0x7XNN: Set VX += NN
 		case 0x7000:
 			chip->V[x] += chip->opcode & 0x00FF;
 			break;
-			
+
 		case 0x8000:
 			switch(chip->opcode & 0x000F)
 			{
@@ -177,22 +166,22 @@ void chip8_emulate_cycle(struct chip8 *chip)
 					chip->V[x] = chip->V[y];
 					break;
 
-				// 0x8XY1: Set VX |= VY
+					// 0x8XY1: Set VX |= VY
 				case 0x0001:
 					chip->V[x] |= chip->V[y];
 					break;
 
-				// 0x8XY2: Set VX &= VY
+					// 0x8XY2: Set VX &= VY
 				case 0x0002:
 					chip->V[x] &= chip->V[y];
 					break;
 
-				// 0x8XY3: Set VX ^= VY
+					// 0x8XY3: Set VX ^= VY
 				case 0x0003:
 					chip->V[x] ^= chip->V[y];
 					break;
 
-				// 0x8XY4: Set VX += VY
+					// 0x8XY4: Set VX += VY
 				case 0x0004:
 					chip->V[x] += chip->V[y];
 					// Check for overflow
@@ -203,7 +192,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 					}
 					break;
 
-				// 0x8XY5: Set VX -= VY
+					// 0x8XY5: Set VX -= VY
 				case 0x0005:
 					// Check if underflow will occur
 					if (chip->V[x] < chip->V[y]) {
@@ -214,14 +203,14 @@ void chip8_emulate_cycle(struct chip8 *chip)
 					chip->V[x] -= chip->V[y];
 					break;
 
-				// 0x8XY6: Set VX = (VY >>= 1)
+					// 0x8XY6: Set VX = (VY >>= 1)
 				case 0x0006:
 					chip->V[0xF] = chip->V[y] & 0x01;
 					chip->V[y] >>= 1;
 					chip->V[x] = chip->V[y];
 					break;
 
-				// 0x8XY7: Set VX = VY - VX
+					// 0x8XY7: Set VX = VY - VX
 				case 0x0007:
 					// Check if underflow will occur
 					if (chip->V[x] > chip->V[y]) {
@@ -232,7 +221,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 					chip->V[x] = chip->V[y] - chip->V[x];
 					break;
 
-				// 0x8XYE: Set VX = (VY <<= 1)
+					// 0x8XYE: Set VX = (VY <<= 1)
 				case 0x000E:
 					chip->V[0xF] = (chip->V[y] & 0x80) >> 7;
 					chip->V[y] <<= 1;
@@ -244,57 +233,34 @@ void chip8_emulate_cycle(struct chip8 *chip)
 					break;
 			}
 			break;
-			
-		// 0x9XY0: Skip next instruction if VX != VY
+
+			// 0x9XY0: Skip next instruction if VX != VY
 		case 0x9000:
 			if (chip->V[x] != chip->V[y]) {
 				chip->pc += 2;
 			}
 			break;
-			
-		// 0xANNN: Sets I to address NNN
+
+			// 0xANNN: Sets I to address NNN
 		case 0xA000:
 			chip->I = chip->opcode & 0x0FFF;
 			break;
-			
-		// 0xBNNN: Jump to address V0 + NNN
+
+			// 0xBNNN: Jump to address V0 + NNN
 		case 0xB000:
 			chip->pc = chip->V[0] + (chip->opcode & 0x0FFF);
 			break;
-			
-		// 0xCXNN: Set VX = rand & NN
+
+			// 0xCXNN: Set VX = rand & NN
 		case 0xC000:
 			chip->V[x] = rand() & (chip->opcode & 0x00FF);
 			break;
-			
-		// 0xDXYN: Draw 8xN sprite at (VX, VY)
-		case 0xD000:
-			{
-				uint16_t height = chip->opcode & 0x000F;
-				uint16_t pixel;
 
-				chip->V[0xF] = 0;
-				for (uint16_t yline = 0; yline < height; ++yline) {
-					if (chip->I + yline > CHIP8_MEMORY_SIZE) {
-						break;
-					}
-					pixel = chip->memory[chip->I + yline];
-					for (uint16_t xline = 0; xline < 8; ++xline) {
-						if ((pixel & (0x80 >> xline)) != 0) {
-							if ((chip->V[x] + xline) % CHIP8_SCREEN_WIDTH + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH) > CHIP8_SCREEN_SIZE) {
-								break;
-							}
-							if (chip->gfx[(chip->V[x] + xline) % CHIP8_SCREEN_WIDTH + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH)] == 1) {
-								chip->V[0xF] = 1;
-							}
-							chip->gfx[(chip->V[x] + xline) % CHIP8_SCREEN_WIDTH + ((chip->V[y] + yline) * CHIP8_SCREEN_WIDTH)] ^= 1;
-						}
-					}
-				}
-			}
-			chip->redraw = true;
+			// 0xDXYN: Draw 8xN sprite at (VX, VY)
+		case 0xD000:
+			chip8_window_draw_sprite(chip, chip->V[x], chip->V[y]);
 			break;
-			
+
 		case 0xE000:
 			switch(chip->opcode & 0x00FF)
 			{
@@ -304,8 +270,8 @@ void chip8_emulate_cycle(struct chip8 *chip)
 						chip->pc += 2;
 					}
 					break;
-				
-				// 0xEXA1: Skip next instruction if key VX is not pressed
+
+					// 0xEXA1: Skip next instruction if key VX is not pressed
 				case 0x00A1:
 					if (chip->key[chip->V[x]] == 0) {
 						chip->pc += 2;
@@ -317,7 +283,7 @@ void chip8_emulate_cycle(struct chip8 *chip)
 					break;
 			}
 			break;
-			
+
 		case 0xF000:
 			switch(chip->opcode & 0x00FF)
 			{
@@ -326,22 +292,22 @@ void chip8_emulate_cycle(struct chip8 *chip)
 					chip->V[x] = chip->delay_timer;
 					break;
 
-				// 0xFX0A: Wait for keypress, and store in VX
+					// 0xFX0A: Wait for keypress, and store in VX
 				case 0x000A:
 					chip->V[x] = chip8_input_wait();
 					break;
 
-				// 0xFX15: Set the delay timer to VX
+					// 0xFX15: Set the delay timer to VX
 				case 0x0015:
 					chip->delay_timer = chip->V[x];
 					break;
 
-				// 0xFX18: Set the sound timer to VX
+					// 0xFX18: Set the sound timer to VX
 				case 0x0018:
 					chip->sound_timer = chip->V[x];
 					break;
 
-				// 0xFX1E: Set I += VX
+					// 0xFX1E: Set I += VX
 				case 0x001E:
 					chip->I += chip->V[x];
 					// Check for overflow
@@ -352,12 +318,12 @@ void chip8_emulate_cycle(struct chip8 *chip)
 					}
 					break;
 
-				// 0xFX29: Sets I to the location of sprite VX
+					// 0xFX29: Sets I to the location of sprite VX
 				case 0x0029:
 					chip->I = CHIP8_FONTSET_START + 5 * chip->V[x];
 					break;
 
-				// 0xFX33: Store BCD(VX) at I
+					// 0xFX33: Store BCD(VX) at I
 				case 0x0033:
 					if (chip->I < CHIP8_MEMORY_SIZE + 3) {
 						chip->memory[chip->I] = chip->V[(chip->opcode & 0x0F00) >> 8] / 100;
@@ -366,12 +332,12 @@ void chip8_emulate_cycle(struct chip8 *chip)
 					}
 					break;
 
-				// 0xFX55: Stores from V0 to VX in memory at I
+					// 0xFX55: Stores from V0 to VX in memory at I
 				case 0x0055:
 					memcpy(chip->memory + chip->I, chip->V, x + 1);
 					break;
 
-				// 0xFX65: Loads V0 to VX from memory at I
+					// 0xFX65: Loads V0 to VX from memory at I
 				case 0x0065:
 					memcpy(chip->V, chip->memory + chip->I, x + 1);
 					break;
@@ -389,7 +355,6 @@ void chip8_emulate_cycle(struct chip8 *chip)
 	uint64_t delta_ms = (chip->time.tv_sec - chip->last_tick.tv_sec) * 1000 
 		+ (chip->time.tv_usec - chip->last_tick.tv_usec) / 1000;
 	if (delta_ms > 16) {
-		chip->redraw = true;
 		chip->last_tick = chip->time;
 		if (chip->delay_timer > 0) {
 			--chip->delay_timer;
@@ -417,24 +382,4 @@ void chip8_print_state(struct chip8 *chip)
 	printf("Timers:\n");
 	printf("\tDelay: %u\n", chip->delay_timer);
 	printf("\tSound: %u\n", chip->sound_timer);
-
-/*	printf("Screen:\n");
-	printf("\t ");
-	for (size_t i = 0; i < CHIP8_SCREEN_WIDTH; i++) {
-		printf("-");
-	}
-	printf("\n");
-	for (size_t i = 0; i < CHIP8_SCREEN_HEIGHT; i++) {
-		printf("\t|");
-		for (size_t j = 0; j < CHIP8_SCREEN_WIDTH; j++) {
-			printf("%s", chip->gfx[i * CHIP8_SCREEN_WIDTH + j] ? "█" : " ");
-		}
-		printf("|\n");
-	}
-	printf("\t ");
-	for (size_t i = 0; i < CHIP8_SCREEN_WIDTH; i++) {
-		printf("-");
-	}
-	printf("\n");
-*/
 }
