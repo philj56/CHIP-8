@@ -25,7 +25,7 @@ struct chip8 {
 	uint8_t key[16];	// Keypad
 
 	// Flags
-	bool redraw;
+	bool original_bitshift;
 
 	// Internal timer
 	struct timeval last_tick;

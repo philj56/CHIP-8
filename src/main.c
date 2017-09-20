@@ -20,6 +20,8 @@ int main(int argc, char **argv)
 	srand(time(NULL));
 	chip8_initialise(&chip);
 
+	//chip.original_bitshift = true;
+
 	chip8_load_rom(&chip, argv[1]);
 
 	chip8_window_initialise(&chip);
