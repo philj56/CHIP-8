@@ -1,13 +1,13 @@
 ODIR=obj
 SRCDIR=src
 CC=gcc
-CFLAGS=-Wall -Wextra -pedantic -Werror -O2 -g
+CFLAGS=-Wall -Wextra -pedantic -O2 -g
 LIBS=-lSDL2 -lm
 
-_DEPS = chip8.h chip8_constants.h chip8_window.h chip8_input.h chip8_audio.h filters/scale2x.h
+_DEPS = chip8.h chip8_constants.h chip8_window.h chip8_input.h chip8_audio.h filters/filters.h
 DEPS = $(patsubst %,$(SRCDIR)/%,$(_DEPS))
 
-_OBJ = chip8.o chip8_window.o chip8_input.o chip8_audio.o filters/scale2x.o main.o
+_OBJ = chip8.o chip8_window.o chip8_input.o chip8_audio.o filters/scale2x.o filters/scale3x.o main.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: $(SRCDIR)/%.c $(DEPS)

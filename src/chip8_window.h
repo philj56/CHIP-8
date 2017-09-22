@@ -12,7 +12,7 @@ struct chip8_window {
 	SDL_Texture *texture;
 	SDL_mutex *sync;
 	uint32_t buffer[CHIP8_SCREEN_SIZE];
-	uint32_t buffer2x[2 * CHIP8_SCREEN_SIZE];
+	uint32_t buffer2x[9 * CHIP8_SCREEN_SIZE];
 	bool quit;
 };
 

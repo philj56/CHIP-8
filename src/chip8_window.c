@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "chip8_window.h"
-#include "filters/scale2x.h"
+#include "filters/filters.h"
 
 static int chip8_window_thread_function(void *window);
 
@@ -84,7 +84,7 @@ static int chip8_window_thread_function(void *window)
 			win->renderer,
 			SDL_PIXELFORMAT_RGB888,
 			SDL_TEXTUREACCESS_STREAMING,
-			CHIP8_SCREEN_WIDTH * 2, CHIP8_SCREEN_HEIGHT * 2
+			CHIP8_SCREEN_WIDTH * 3, CHIP8_SCREEN_HEIGHT * 3
 			);
 
 	if (win->texture == NULL) {
@@ -98,7 +98,7 @@ static int chip8_window_thread_function(void *window)
 
 	SDL_RenderSetLogicalSize(
 			win->renderer,
-			CHIP8_SCREEN_WIDTH * 2, CHIP8_SCREEN_HEIGHT * 2
+			CHIP8_SCREEN_WIDTH * 3, CHIP8_SCREEN_HEIGHT * 3
 			);
 
 	for (size_t i = 0; i < CHIP8_SCREEN_SIZE; i++) {
@@ -117,15 +117,15 @@ static int chip8_window_thread_function(void *window)
 			win->buffer[i] |= (win->buffer[i] << 8) | (win->buffer[i] << 16);
 			win->buffer[i] |= win->chip->gfx[i] * 0xFFFFFF;
 		}
-		scale2x(win->buffer2x, win->buffer, CHIP8_SCREEN_WIDTH, CHIP8_SCREEN_HEIGHT);
+		scale3x(win->buffer2x, win->buffer, CHIP8_SCREEN_WIDTH, CHIP8_SCREEN_HEIGHT);
 		if (SDL_UnlockMutex(win->sync) < 0) {
 			fprintf(stderr, "Could not unlock mutex: %s\n", SDL_GetError());
 		}
 		err = SDL_UpdateTexture(
 				win->texture, 
 				NULL, 
-				win->buffer, 
-				CHIP8_SCREEN_WIDTH * sizeof(win->buffer[0])
+				win->buffer2x, 
+				3 * CHIP8_SCREEN_WIDTH * sizeof(win->buffer2x[0])
 				);
 		if (err < 0) {
 			fprintf(stderr, "Error updating texture: %s\n", SDL_GetError());
