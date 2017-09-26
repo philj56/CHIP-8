@@ -20,9 +20,10 @@ $(OBJ): | $(ODIR)
 
 $(ODIR):
 	mkdir -p $@
+	mkdir -p $@/filters
 
 
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o $(SRCDIR)/*~ chip8 $(IDIR)/*~
+	rm -rf $(ODIR) $(SRCDIR)/*~ chip8
