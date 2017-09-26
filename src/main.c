@@ -10,16 +10,17 @@
 
 int main(int argc, char **argv)
 {
-	struct timespec clock_time = {.tv_sec = 0, .tv_nsec = 2000000};
 	if (argc == 1) {
 		printf("Usage: %s rom_file\n", argv[0]);
 		exit(1);
 	}
 	struct chip8 chip;
+	struct timespec clock_time = {.tv_sec = 0, .tv_nsec = 2000000};
 
 	srand(time(NULL));
 	chip8_initialise(&chip);
 
+	// Game compatibility flags
 	chip.original_bitshift = false;
 	chip.original_regdump = false;
 
